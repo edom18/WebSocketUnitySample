@@ -60,3 +60,5 @@ crashlytics-build.properties
 
 # Rider
 .idea
+
+node_modules
