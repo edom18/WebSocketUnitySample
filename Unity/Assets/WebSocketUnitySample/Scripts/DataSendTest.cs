@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using WebSocketSharp;
 
-public class Client : MonoBehaviour
+public class DataSendTest : MonoBehaviour
 {
     [SerializeField] private Text _text = null;
     [SerializeField] private string _serverAddress = "localhost";
@@ -17,7 +17,7 @@ public class Client : MonoBehaviour
     private Material _material = null;
     private WebSocket _webSocket = null;
 
-    private void Start()
+    private void Connect()
     {
         _material = _targetObj.GetComponent<Renderer>().material;
 
@@ -70,9 +70,16 @@ public class Client : MonoBehaviour
 
     private void OnGUI()
     {
-        if (GUI.Button(new Rect(10, 10, 130, 30), "Send"))
+        GUI.Label(new Rect(10, 10, 100, 20), "Server Address:");
+        _serverAddress = GUI.TextField(new Rect(110, 10, 130, 20), _serverAddress);
+
+        GUI.Label(new Rect(10, 40, 100, 20), "Server Address:");
+        string portStr = GUI.TextField(new Rect(110, 40, 130, 20), _serverPort.ToString());
+        int.TryParse(portStr, out _serverPort);
+
+        if (GUI.Button(new Rect(250, 10, 130, 50), "Connect"))
         {
-            _webSocket.Send("Test message.");
+            Connect();
         }
     }
 
