@@ -3,7 +3,6 @@ class WebSocketController {
     static MessageType = {
         Color: 0,
         Image: 1,
-        Text: 2,
     };
     connection = null;
     eventTypeField = null;
@@ -66,7 +65,7 @@ function changedColor(evt) {
     var data = new Uint8Array(buffer);
     data.set([WebSocketController.MessageType.Color], 0);
     data.set(array, 1);
-    sendMessage(data.buffer);
+    ws.sendMessage(data.buffer);
 }
 
 function getColorData(colorStr) {
@@ -93,7 +92,7 @@ function changedFile(evt) {
 
         console.log(data.buffer.byteLength);
 
-        connection.send(data.buffer);
+        ws.sendMessage(data.buffer);
     }
 
     reader.readAsArrayBuffer(file);
@@ -111,11 +110,6 @@ document.getElementById("Connect").addEventListener('click', () => {
 });
 
 document.getElementById("Disconnect").addEventListener('click', ws.disconnect);
-
-document.getElementById("Send").addEventListener('click', () => {
-    var message = document.getElementById("inputField").value;
-    ws.sendMessage(message);
-});
 
 document.getElementById("Color").addEventListener('change', changedColor);
 document.getElementById("File").addEventListener('change', changedFile);

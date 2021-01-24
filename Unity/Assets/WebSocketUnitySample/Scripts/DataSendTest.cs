@@ -16,6 +16,14 @@ public class DataSendTest : MonoBehaviour
 
     private Material _material = null;
     private WebSocket _webSocket = null;
+    private bool _isConnected = false;
+
+    private enum DataType
+    {
+        None = -1,
+        Color = 0,
+        Image = 1,
+    }
 
     private void Connect()
     {
@@ -25,50 +33,102 @@ public class DataSendTest : MonoBehaviour
 
         _webSocket = new WebSocket($"ws://{_serverAddress}:{_serverPort}/");
 
-        _webSocket.OnOpen += (sender, args) => { Log("WebSocket opened."); };
+        _webSocket.OnOpen += (sender, args) =>
+        {
+            _isConnected = true;
+            Log("WebSocket opened.");
+        };
 
         _webSocket.OnMessage += (sender, args) =>
         {
             Debug.Log("OnMessage");
-            
-            context.Post(_ =>
-            {
-                string colorStr = Encoding.UTF8.GetString(args.RawData, 0, 7);
 
-                byte[] texData = new byte[args.RawData.Length - 7];
-                Array.Copy(args.RawData, 7, texData, 0, texData.Length);
-                
-                Texture2D tex = new Texture2D(1, 1);
-                tex.LoadImage(texData);
-                tex.Apply();
-                
-                Debug.Log(tex.width);
-                
-                _material.mainTexture = tex;
-
-                if (ColorUtility.TryParseHtmlString(colorStr, out Color color))
-                {
-                    Debug.Log(color);
-                    _material.color = color;
-                }
-            }, null);
+            context.Post(_ => { HandleMessage(args.RawData); }, null);
         };
 
         _webSocket.OnError += (sender, args) => { Log($"WebScoket Error Message: {args.Message}"); };
 
-        _webSocket.OnClose += (sender, args) => { Log("WebScoket close"); };
+        _webSocket.OnClose += (sender, args) =>
+        {
+            _isConnected = false;
+            Log("WebScoket close");
+        };
 
         _webSocket.Connect();
 
         Log("WebSocket Client is started.");
     }
 
+    private void HandleMessage(byte[] data)
+    {
+        DataType type = GetDataType(data);
+
+        switch (type)
+        {
+            case DataType.Color:
+                HandleAsColor(data);
+                break;
+
+            case DataType.Image:
+                HandleAsImage(data);
+                break;
+        }
+    }
+
+    private void HandleAsColor(byte[] data)
+    {
+        string colorStr = Encoding.UTF8.GetString(data, 1, 7);
+
+        if (ColorUtility.TryParseHtmlString(colorStr, out Color color))
+        {
+            Debug.Log(color);
+            _material.color = color;
+        }
+    }
+
+    private void HandleAsImage(byte[] data)
+    {
+        byte[] texData = new byte[data.Length - 1];
+        Array.Copy(data, 1, texData, 0, texData.Length);
+
+        Texture2D tex = new Texture2D(1, 1);
+        tex.LoadImage(texData);
+        tex.Apply();
+        
+        _material.mainTexture = tex;
+
+        Debug.Log(tex.width);
+    }
+
+    private DataType GetDataType(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+        {
+            return DataType.None;
+        }
+
+        return (DataType)data[0];
+    }
+
     private void Log(string message)
     {
-        _text.text = message + "\n" + _text.text;
+        Debug.Log(message);
+        _text.text = message;
     }
 
     private void OnGUI()
+    {
+        if (_isConnected)
+        {
+            DrawDisconnectUI();
+        }
+        else
+        {
+            DrawConnectUI();
+        }
+    }
+
+    private void DrawConnectUI()
     {
         GUI.Label(new Rect(10, 10, 100, 20), "Server Address:");
         _serverAddress = GUI.TextField(new Rect(110, 10, 130, 20), _serverAddress);
@@ -80,6 +140,14 @@ public class DataSendTest : MonoBehaviour
         if (GUI.Button(new Rect(250, 10, 130, 50), "Connect"))
         {
             Connect();
+        }
+    }
+
+    private void DrawDisconnectUI()
+    {
+        if (GUI.Button(new Rect(10, 10, 130, 30), "Disconnect"))
+        {
+            _webSocket.Close();
         }
     }
 
