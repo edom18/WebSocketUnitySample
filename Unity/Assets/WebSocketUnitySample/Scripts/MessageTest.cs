@@ -13,6 +13,7 @@ public class MessageTest : MonoBehaviour
     [SerializeField] private string _serverAddress = "localhost";
     [SerializeField] private int _serverPort = 3000;
 
+    private string _message = "sample text";
     private WebSocket _webSocket = null;
     private bool _isConnected = false;
 
@@ -58,6 +59,7 @@ public class MessageTest : MonoBehaviour
     {
         if (_isConnected)
         {
+            DrawSendButton();
             DrawDisconnectUI();
         }
         else
@@ -83,9 +85,19 @@ public class MessageTest : MonoBehaviour
 
     private void DrawDisconnectUI()
     {
-        if (GUI.Button(new Rect(10, 10, 130, 50), "Disconnect"))
+        if (GUI.Button(new Rect(300, 10, 130, 30), "Disconnect"))
         {
             _webSocket.Close();
+        }
+    }
+
+    private void DrawSendButton()
+    {
+        _message = GUI.TextField(new Rect(10, 10, 130, 30), _message);
+        
+        if (GUI.Button(new Rect(150, 10, 130, 30), "Send Message"))
+        {
+            _webSocket.Send(_message);
         }
     }
 
